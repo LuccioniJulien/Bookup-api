@@ -36,23 +36,24 @@ namespace BaseApi {
                 .AllowAnyHeader ());
             if (env.IsDevelopment ()) {
                 app.UseDeveloperExceptionPage ();
-                UpdateDatabase (app);
             } else {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts ();
+                CreateDatabase (app);
             }
             app.UseHttpsRedirection ();
             app.UseMvc ();
             app.UseAuthentication ();
         }
 
-        private static void UpdateDatabase (IApplicationBuilder app) {
+        private static void CreateDatabase (IApplicationBuilder app) {
             using (var serviceScope = app.ApplicationServices
                 .GetRequiredService<IServiceScopeFactory> ()
                 .CreateScope ()) {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
                     // créé la bdd si elle n'existe pas
-                    context.Database.EnsureCreated ();
+                    var sql = context.Database.GenerateCreateScript ();
+                    context.Database.ExecuteSqlCommand (sql);
                 }
             }
         }

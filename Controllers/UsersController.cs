@@ -44,7 +44,7 @@ namespace BaseApi.Controllers {
                 };
                 return Created ("register", response);
             } catch (Exception e) {
-                return StatusCode (500);
+                return StatusCode (500, e.Message);
             }
         }
 
@@ -129,7 +129,7 @@ namespace BaseApi.Controllers {
                 }
 
                 _context.Remove (userFromDb);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync ();
 
                 return StatusCode (204);
             } catch (Exception e) {
