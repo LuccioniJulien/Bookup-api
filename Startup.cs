@@ -52,8 +52,10 @@ namespace BaseApi {
                 .CreateScope ()) {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
                     // créé la bdd si elle n'existe pas
-                    var sql = context.Database.GenerateCreateScript ();
-                    context.Database.ExecuteSqlCommand (sql);
+                    if (context.Database.EnsureCreated ()) {
+                        var sql = context.Database.GenerateCreateScript ();
+                        context.Database.ExecuteSqlCommand (sql);
+                    }
                 }
             }
         }
