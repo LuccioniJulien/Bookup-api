@@ -10,6 +10,7 @@ namespace BaseApi.Models {
 
         [Required, MinLength (5)]
         public string Name { get; set; }
+        public string Avatar_url { get; set; }
 
         [EmailAddress, Required]
         public string Email { get; set; }
@@ -27,7 +28,7 @@ namespace BaseApi.Models {
 
         public object ToMessage () => new { Id, Name, Email };
 
-        public void Deconstruct (out string name,out string mail, out string password, out string passwordConfirmation) {
+        public void Deconstruct (out string name, out string mail, out string password, out string passwordConfirmation) {
             name = Name;
             password = Password;
             mail = Email;

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BaseApi.Controllers {
     [Authorize (AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-
+    [Produces("application/json")]
     [Route ("api/[controller]")]
     public class UsersController : Controller {
         private readonly DBcontext _context;
@@ -21,7 +21,6 @@ namespace BaseApi.Controllers {
 
         /// <remarks>
         /// Sample request:
-        ///
         ///     POST /api/users/Register
         ///     {
         ///        "name":"mouiaa",
@@ -29,10 +28,14 @@ namespace BaseApi.Controllers {
         ///        "password":"Warcraft3?",
         ///        "passwordConfirmation":"Warcraft3?"
         ///     }
-        ///
         /// </remarks>
+        /// <returns>A newly created TodoItem</returns>
+        /// <response code="201">Returns the newly created User</response>
+        /// <response code="400">If the User is null</response>     
         [AllowAnonymous]
         [HttpPost ("[action]")]
+        [ProducesResponseType(201)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<User>> Register ([FromBody] User user) {
             try {
                 if (user == null) {
@@ -72,6 +75,8 @@ namespace BaseApi.Controllers {
         /// </remarks>
         [AllowAnonymous]
         [HttpPost ("[action]")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<string>> Auth ([FromBody] User user) {
             try {
                 if (user == null) {
@@ -138,7 +143,7 @@ namespace BaseApi.Controllers {
         }
 
         [HttpDelete ("{id}")]
-        public async Task<ActionResult<string>> Delete (Guid id) {
+        public async Task<ActionResult> Delete (Guid id) {
             try {
                 var uuid = Guid.Parse (User.Identity.Name);
                 var uuidFromQuery = id;
