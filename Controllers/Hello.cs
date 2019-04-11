@@ -15,8 +15,8 @@ namespace BaseApi.Controllers {
 
         [HttpGet]
         public ActionResult Get () {
-            var obj = new { Message = "Hello word" };
-            return Ok (obj);
+            var message = new { Message = "Hello Majdi" };
+            return Ok (message);
         }
     }
 }

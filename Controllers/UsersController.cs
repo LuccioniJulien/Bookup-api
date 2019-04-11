@@ -19,6 +19,18 @@ namespace BaseApi.Controllers {
             this._context = context;
         }
 
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST /api/users/Register
+        ///     {
+        ///        "name":"mouiaa",
+        ///        "email":"juju@ju.ju,
+        ///        "password":"Warcraft3?",
+        ///        "passwordConfirmation":"Warcraft3?"
+        ///     }
+        ///
+        /// </remarks>
         [AllowAnonymous]
         [HttpPost ("[action]")]
         public async Task<ActionResult<User>> Register ([FromBody] User user) {
@@ -48,6 +60,16 @@ namespace BaseApi.Controllers {
             }
         }
 
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST /api/users/Auth
+        ///     {
+        ///        "email":"juju@ju.ju,
+        ///        "password":"Warcraft3?",
+        ///     }
+        ///
+        /// </remarks>
         [AllowAnonymous]
         [HttpPost ("[action]")]
         public async Task<ActionResult<string>> Auth ([FromBody] User user) {
