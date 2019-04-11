@@ -18,6 +18,5 @@ namespace BaseApi.Controllers {
             var obj = new { Message = "Hello word" };
             return Ok (obj);
         }
-
     }
 }
