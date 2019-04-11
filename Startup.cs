@@ -64,7 +64,12 @@ namespace BaseApi {
                 .GetRequiredService<IServiceScopeFactory> ()
                 .CreateScope ()) {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
-                    context.Database.Migrate ();
+                    try {
+                        context.Database.Migrate ();
+
+                    } catch (Exception e) {
+                        Console.WriteLine (e.Message);
+                    }
                 }
             }
         }

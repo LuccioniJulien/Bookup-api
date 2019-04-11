@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BaseApi.Migrations
 {
     [DbContext(typeof(DBcontext))]
-    [Migration("20190411171248_test")]
-    partial class test
+    [Migration("20190411173624_MigrationDatabase")]
+    partial class MigrationDatabase
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -25,6 +25,8 @@ namespace BaseApi.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Avatar_url");
 
                     b.Property<string>("Email")
                         .IsRequired();
