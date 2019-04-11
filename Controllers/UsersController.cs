@@ -44,7 +44,7 @@ namespace BaseApi.Controllers {
                 };
                 return Created ("register", response);
             } catch (Exception e) {
-                return Ok (e.Message);
+                return StatusCode (500, e.Message);
             }
         }
 
