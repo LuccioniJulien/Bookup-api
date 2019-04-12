@@ -20,24 +20,24 @@ namespace BaseApi.Helper {
             return response;
         }
 
-        public static object ToBadRequest (this string message, int statut = 400) {
+        public static object ToBadRequest (this string message, int status = 400) {
             string[] errors = { message };
 
             var response = new {
                 meta = new {
                 errors,
-                statut
+                status
                 }
             };
 
             return response;
         }
 
-        public static object ToMessage<T> (T data, int statut) {
+        public static object ToMessage<T> (T data, int status) {
             return new {
                 data,
                 meta = new {
-                    statut
+                    status
                     }
             };
         }
