@@ -88,7 +88,7 @@ namespace BaseApi.Controllers {
                 }
                 var token = JWT.GetToken (userFromDb);
 
-                return Ok (Format.ToMessage (userFromDb.ToMessage (), 200, token));
+                return Created ("login", Format.ToMessage (userFromDb.ToMessage (), 201, token));
             } catch (Exception e) {
                 return StatusCode (500);
             }
