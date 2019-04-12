@@ -12,6 +12,8 @@ namespace BaseApi.Models {
         [Required]
         public string Title { get; set; }
         public string Description { get; set; }
+        public string Thumbnail  { get; set; }
+        public DateTime PublishedDate { get; set; }
         public ICollection<Tagged> Taggeds { get; set; }
         public ICollection<Written> Writtens { get; set; }
     }

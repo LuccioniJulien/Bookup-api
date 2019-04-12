@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BaseApi.Controllers {
     [Authorize (AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    [Produces("application/json")]
+    [Produces ("application/json")]
     [Route ("api/[controller]")]
     public class UsersController : Controller {
         private readonly DBcontext _context;
@@ -34,8 +34,8 @@ namespace BaseApi.Controllers {
         /// <response code="400">If the User is null</response>     
         [AllowAnonymous]
         [HttpPost ("[action]")]
-        [ProducesResponseType(201)]
-        [ProducesResponseType(400)]
+        [ProducesResponseType (201)]
+        [ProducesResponseType (400)]
         public async Task<ActionResult<User>> Register ([FromBody] User user) {
             try {
                 if (user == null) {
@@ -43,7 +43,7 @@ namespace BaseApi.Controllers {
                 }
 
                 if (!ModelState.IsValid) {
-                    return BadRequest (ModelState.ToBadRequest ());
+                    return BadRequest (ModelState.ToBadRequest (400));
                 }
 
                 bool isEmailAlreadyTaken = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email) != null;
@@ -54,10 +54,7 @@ namespace BaseApi.Controllers {
                 user.SetPasswordhHash ();
                 _context.Add (user);
                 await _context.SaveChangesAsync ();
-                var response = new {
-                    data = user.ToMessage ()
-                };
-                return Created ("register", response);
+                return Created ("register", Format.ToMessage (user.ToMessage (), 201));
             } catch (Exception e) {
                 return StatusCode (500);
             }
@@ -73,8 +70,8 @@ namespace BaseApi.Controllers {
         /// </remarks>
         [AllowAnonymous]
         [HttpPost ("[action]")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
+        [ProducesResponseType (200)]
+        [ProducesResponseType (400)]
         public async Task<ActionResult<string>> Auth ([FromBody] User user) {
             try {
                 if (user == null) {
@@ -90,11 +87,8 @@ namespace BaseApi.Controllers {
                     return BadRequest ("Wrong password".ToBadRequest ());
                 }
                 var token = JWT.GetToken (userFromDb);
-                var response = new {
-                    meta =
-                    token
-                };
-                return Ok (response);
+
+                return Ok (Format.ToMessage (userFromDb.ToMessage (), 200, token));
             } catch (Exception e) {
                 return StatusCode (500);
             }
