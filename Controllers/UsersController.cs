@@ -65,13 +65,11 @@ namespace BaseApi.Controllers {
 
         /// <remarks>
         /// Sample request:
-        ///
         ///     POST /api/users/Auth
         ///     {
         ///        "email":"juju@ju.ju,
         ///        "password":"Warcraft3?",
         ///     }
-        ///
         /// </remarks>
         [AllowAnonymous]
         [HttpPost ("[action]")]
