@@ -41,12 +41,12 @@ namespace BaseApi.Helper {
                     }
             };
         }
-        public static object ToMessage<T> (T data, int statut, object token = null) {
+        public static object ToMessage<T> (T data, int status, object token = null) {
             return new {
             data,
             meta = new {
             token,
-            statut
+            status
             }
             };
         }
