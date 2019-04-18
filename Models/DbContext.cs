@@ -49,7 +49,12 @@ namespace BaseApi.Models {
                 "https://www.googleapis.com/books/v1/volumes?q=star+wars&langRestrict=en&maxResults=40",
                 "https://www.googleapis.com/books/v1/volumes?q=star+trek&langRestrict=en&maxResults=40",
                 "https://www.googleapis.com/books/v1/volumes?q=dystopia&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=uchronic&langRestrict=en&maxResults=40"
+                "https://www.googleapis.com/books/v1/volumes?q=uchronic&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=SMITH+Dan&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Ormston+Dean&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Infinity+Wars&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=comics&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=dc&langRestrict=en&maxResults=40"
                 };
 
                 foreach (var url in urls) {
