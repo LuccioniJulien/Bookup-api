@@ -17,11 +17,15 @@ namespace BaseApi.Models {
         public DbSet<Tagged> Taggeds { get; set; }
         public DbSet<Written> Writtens { get; set; }
         public DbSet<Book> Books { get; set; }
+        public DbSet<Categorized> Categorizeds { get; set; }
+        public DbSet<Category> Categories { get; set; }
         protected override void OnModelCreating (ModelBuilder builder) {
             User.BuildConstraint (builder);
             Favorite.BuildConstraint (builder);
             Tagged.BuildConstraint (builder);
             Written.BuildConstraint (builder);
+            Book.BuildConstraint (builder);
+            Categorized.BuildConstraint (builder);
         }
 
         protected override void OnConfiguring (DbContextOptionsBuilder optionsBuilder) {
@@ -31,55 +35,59 @@ namespace BaseApi.Models {
 
         public async void Seed () {
             using (var client = new HttpClient ()) {
-                string json = await client.GetStringAsync ("https://www.googleapis.com/books/v1/volumes?q=%22%22&langRestrict=en");
-                var resource = JObject.Parse (json);
-                // string cpu = (string)o["CPU"];
-                // // Intel
-                // string firstDrive = (string)o["Drives"][0];
-                // // DVD read/writer
-                // IList<string> allDrives = o["Drives"].Select(t => (string)t).ToList();
+                var urls = new List<string> {
+                "https://www.googleapis.com/books/v1/volumes?q=Fantasy&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Science+Fiction&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=History&langRestrict=en&maxResults=40",
+                };
 
-                resource["items"].Select (t => t).ToList ().ForEach (i => {
-                    try {
-                        var isbn = i["volumeInfo"]["industryIdentifiers"];
-                        if (isbn == null) return;
-                        isbn = isbn.ToList () [0]["identifier"];
+                foreach (var url in urls) {
+                    string json = await client.GetStringAsync (url);
+                    var resource = JObject.Parse (json);
+                    Insert (resource);
+                }
+            }
+        }
 
-                        // if (string.IsNullOrEmpty (isbn)) return;
-                        DateTime.TryParseExact ((string) i["volumeInfo"]["publishedDate"], "yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dt);
-                        var livre = new Book {
-                            Isbn = (string) isbn,
-                            Title = (string) i["volumeInfo"]["title"],
-                            Description = (string) i["volumeInfo"]["description"],
-                            Thumbnail = (string) i["volumeInfo"]["imageLinks"]["thumbnail"],
-                            PublishedDate = dt
-                        };
-                        using (var context = new DBcontext ()) {
-                            var newAuthors = new List<Author> ();
-                            i["volumeInfo"]["authors"].ToList ().ForEach (x => {
-                                var tempAuthor = new Author { Name = (string) x };
-                                context.Add (tempAuthor);
-                                context.SaveChanges ();
-                                newAuthors.Add (tempAuthor);
-                            });
+        public void Insert (JObject resource) {
+            resource["items"].Select (t => t).ToList ().ForEach (i => {
+                try {
 
-                            context.Add (livre);
+                    using (var context = new DBcontext ()) {
+                        var newAuthors = Author.GetAuthorsFromJSON (i).Select (x => {
+                            var author = context.Authors.FirstOrDefault (a => a.Name == x.Name);
+                            if (author != null) return author;
+                            context.Add (x);
                             context.SaveChanges ();
+                            return x;
+                        });
 
-                            newAuthors.Select (a => a.Id).ToList ().ForEach (x => {
-                                context.Add (new Written { BookId = livre.Id, AuthorId = x });
-                            });
+                        var newCategories = Category.GetCategoriesFromJSON (i).Select (x => {
+                            var category = context.Categories.FirstOrDefault (a => a.Name == x.Name);
+                            if (category != null) return category;
+                            context.Add (x);
                             context.SaveChanges ();
-                        }
+                            return x;
+                        });
 
-                    } catch (Exception e) {
-                        Console.WriteLine (e.Message);
+                        var livre = Book.GetBookFromJSON (i);
+                        context.Add (livre);
+                        context.SaveChanges ();
+
+                        newAuthors.Select (a => a.Id).ToList ().ForEach (x => {
+                            context.Add (new Written { BookId = livre.Id, AuthorId = x });
+                        });
+                        newCategories.Select (c => c.Id).ToList ().ForEach (x => {
+                            context.Add (new Categorized { BookId = livre.Id, CategoryId = x });
+                        });
+                        context.SaveChanges ();
                     }
 
-                });
+                } catch (Exception e) {
+                    Console.WriteLine (e.Message);
+                }
 
-            }
-
+            });
         }
 
     }

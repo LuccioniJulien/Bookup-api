@@ -33,22 +33,9 @@ namespace BaseApi.Helper {
             return response;
         }
 
-        public static object ToMessage<T> (T data, int status) {
-            return new {
-                data,
-                meta = new {
-                    status
-                    }
-            };
-        }
-        public static object ToMessage<T> (T data, int status, object token = null) {
-            return new {
-            data,
-            meta = new {
-            token,
-            status
-            }
-            };
-        }
+        public static object ToMessage<T> (T data, int status) => new { data, meta = new { status } };
+
+        public static object ToMessage<T> (T data, int status, object token = null) => new { data, meta = new { token, status } };
+
     }
 }
