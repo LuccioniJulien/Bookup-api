@@ -18,9 +18,12 @@ namespace BaseApi.Controllers {
         public UsersController (DBcontext context) {
             this._context = context;
         }
-
+        /// <summary>
+        /// Register a User
+        /// </summary>
         /// <remarks>
         /// Sample request:
+        /// 
         ///     POST /api/users/Register
         ///     {
         ///        "name":"mouiaa",
@@ -28,10 +31,14 @@ namespace BaseApi.Controllers {
         ///        "password":"Warcraft3?",
         ///        "passwordConfirmation":"Warcraft3?"
         ///     }
+        /// 
         /// </remarks>
-        /// <returns>A newly created TodoItem</returns>
-        /// <response code="201">Returns the newly created User</response>
-        /// <response code="400">If the User is null</response>     
+        /// <param name="user">
+        /// { "name", "email", "password", "passwordConfirmation" }
+        /// </param>
+        /// <returns>A user</returns>
+        /// <response code="201">Returns the created User</response>
+        /// <response code="400">If the User is null</response> 
         [AllowAnonymous]
         [HttpPost ("[action]")]
         [ProducesResponseType (201)]
@@ -48,7 +55,7 @@ namespace BaseApi.Controllers {
 
                 bool isEmailAlreadyTaken = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email) != null;
                 if (isEmailAlreadyTaken) {
-                    return BadRequest ("user with this email already exist".ToBadRequest ());
+                    return BadRequest ("Email already taken".ToBadRequest ());
                 }
 
                 user.SetPasswordhHash ();
@@ -59,23 +66,35 @@ namespace BaseApi.Controllers {
                 return StatusCode (500);
             }
         }
-
+        /// <summary>
+        /// Login with a user
+        /// </summary>
         /// <remarks>
         /// Sample request:
+        /// 
         ///     POST /api/users/Auth
         ///     {
         ///        "email":"juju@ju.ju,
         ///        "password":"Warcraft3?",
         ///     }
+        /// 
         /// </remarks>
+        /// <param name="user">
+        /// { "email", "password" }
+        /// </param>
+        /// <returns>A user</returns>
+        /// <response code="201">Returns the user and the jwt token</response>
+        /// <response code="400">If the User is null, if the email is wrong</response>
+        /// <response code="401">If the password is wrong</response> 
         [AllowAnonymous]
         [HttpPost ("[action]")]
         [ProducesResponseType (200)]
         [ProducesResponseType (400)]
+        [ProducesResponseType (401)]
         public async Task<ActionResult<string>> Auth ([FromBody] User user) {
             try {
                 if (user == null) {
-                    return BadRequest ("user object is null".ToBadRequest ());
+                    return BadRequest ();
                 }
 
                 User userFromDb = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
@@ -84,11 +103,11 @@ namespace BaseApi.Controllers {
                 }
 
                 if (!userFromDb.Compare (user.Password)) {
-                    return BadRequest ("Wrong password".ToBadRequest ());
+                    return Unauthorized ("Wrong password".ToBadRequest ());
                 }
                 var token = JWT.GetToken (userFromDb);
 
-                return Ok (Format.ToMessage (userFromDb.ToMessage (), 200, token));
+                return Created ("login", Format.ToMessage (userFromDb.ToMessage (), 201, token));
             } catch (Exception e) {
                 return StatusCode (500);
             }
@@ -134,26 +153,26 @@ namespace BaseApi.Controllers {
             }
         }
 
-        [HttpDelete ("{id}")]
-        public async Task<ActionResult> Delete (Guid id) {
-            try {
-                var uuid = Guid.Parse (User.Identity.Name);
-                var uuidFromQuery = id;
+        // [HttpDelete ("{id}")]
+        // public async Task<ActionResult> Delete (Guid id) {
+        //     try {
+        //         var uuid = Guid.Parse (User.Identity.Name);
+        //         var uuidFromQuery = id;
 
-                User userFromDb = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuidFromQuery);
-                User userFromTokenId = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuid);
+        //         User userFromDb = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuidFromQuery);
+        //         User userFromTokenId = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuid);
 
-                if ((userFromTokenId == null) || (userFromDb?.Id != userFromTokenId?.Id)) {
-                    return Unauthorized ();
-                }
+        //         if ((userFromTokenId == null) || (userFromDb?.Id != userFromTokenId?.Id)) {
+        //             return Unauthorized ();
+        //         }
 
-                _context.Remove (userFromDb);
-                await _context.SaveChangesAsync ();
+        //         _context.Remove (userFromDb);
+        //         await _context.SaveChangesAsync ();
 
-                return StatusCode (204);
-            } catch (Exception e) {
-                return StatusCode (500);
-            }
-        }
+        //         return StatusCode (204);
+        //     } catch (Exception e) {
+        //         return StatusCode (500);
+        //     }
+        // }
     }
 }
