@@ -7,7 +7,7 @@ namespace BaseApi.Models {
         public Guid Id { get; set; }
 
         [Required]
-        public string Email { get; set; }
+        public string Name { get; set; }
         public ICollection<Favorite> Favorites { get; set; }
         public ICollection<Tagged> Taggeds { get; set; }
     }
