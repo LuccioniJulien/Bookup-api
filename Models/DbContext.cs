@@ -39,6 +39,17 @@ namespace BaseApi.Models {
                 "https://www.googleapis.com/books/v1/volumes?q=Fantasy&langRestrict=en&maxResults=40",
                 "https://www.googleapis.com/books/v1/volumes?q=Science+Fiction&langRestrict=en&maxResults=40",
                 "https://www.googleapis.com/books/v1/volumes?q=History&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Drama&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Science&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Fiction&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Heroic&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Vagner&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=Horor&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=games+of+thrones&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=star+wars&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=star+trek&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=dystopia&langRestrict=en&maxResults=40",
+                "https://www.googleapis.com/books/v1/volumes?q=uchronic&langRestrict=en&maxResults=40"
                 };
 
                 foreach (var url in urls) {
@@ -84,7 +95,7 @@ namespace BaseApi.Models {
                     }
 
                 } catch (Exception e) {
-                    Console.WriteLine (e.Message);
+                    // Console.WriteLine (e.Message);
                 }
 
             });
