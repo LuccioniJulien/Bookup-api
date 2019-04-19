@@ -1,10 +1,13 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BaseApi.Helper;
 using BaseApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,9 +17,10 @@ namespace BaseApi.Controllers {
     [Route ("api/[controller]")]
     public class UsersController : Controller {
         private readonly DBcontext _context;
-
+        public IHostingEnvironment _environment;
         public UsersController (DBcontext context) {
             this._context = context;
+            this._environment = new HostingEnvironment ();
         }
         /// <summary>
         /// Register a User
@@ -41,8 +45,6 @@ namespace BaseApi.Controllers {
         /// <response code="400">If the User is null</response> 
         [AllowAnonymous]
         [HttpPost ("[action]")]
-        [ProducesResponseType (201)]
-        [ProducesResponseType (400)]
         public async Task<ActionResult<User>> Register ([FromBody] User user) {
             try {
                 if (user == null) {
@@ -88,9 +90,6 @@ namespace BaseApi.Controllers {
         /// <response code="401">If the password is wrong</response> 
         [AllowAnonymous]
         [HttpPost ("[action]")]
-        [ProducesResponseType (200)]
-        [ProducesResponseType (400)]
-        [ProducesResponseType (401)]
         public async Task<ActionResult<string>> Auth ([FromBody] User user) {
             try {
                 if (user == null) {
@@ -108,6 +107,20 @@ namespace BaseApi.Controllers {
                 var token = JWT.GetToken (userFromDb);
 
                 return Created ("login", Format.ToMessage (userFromDb.ToMessage (), 201, token));
+            } catch (Exception e) {
+                return StatusCode (500);
+            }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<User>> Get () {
+            try {
+                var uuid = Guid.Parse (User.Identity.Name);
+                User userFromTokenId = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuid);
+                if (userFromTokenId == null) {
+                    return Unauthorized ();
+                }
+                return Ok (Format.ToMessage (userFromTokenId.ToMessage (), 201));
             } catch (Exception e) {
                 return StatusCode (500);
             }
@@ -153,6 +166,22 @@ namespace BaseApi.Controllers {
             }
         }
 
+        // [AllowAnonymous]
+        // [HttpPost]
+        // public ActionResult<string> Post (FIleUploadAPI files) {
+        //     try {
+        //         if (!Directory.Exists (_environment.WebRootPath + "\\uploads\\")) {
+        //             Directory.CreateDirectory (_environment.WebRootPath + "\\uploads\\");
+        //         }
+        //         using (FileStream filestream = System.IO.File.Create (_environment.WebRootPath + "\\uploads\\" + files.files.FileName)) {
+        //             files.files.CopyTo (filestream);
+        //             filestream.Flush ();
+        //         }
+        //         return Created ("image", "\\uploads\\" + files.files.FileName);
+        //     } catch (Exception e) {
+        //         return StatusCode (500);
+        //     }
+        // }
         // [HttpDelete ("{id}")]
         // public async Task<ActionResult> Delete (Guid id) {
         //     try {

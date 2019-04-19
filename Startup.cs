@@ -32,7 +32,6 @@ namespace BaseApi {
             services.AddJWT ();
             services.AddSwaggerGen (c => {
                 c.SwaggerDoc ("v1", new Info { Title = "My API", Version = "v1" });
-                // Set the comments path for the Swagger JSON and UI.
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine (AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments (xmlPath);
@@ -68,17 +67,17 @@ namespace BaseApi {
                 .GetRequiredService<IServiceScopeFactory> ()
                 .CreateScope ()) {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
-                    // context.Database.Migrate();
+                    context.Database.Migrate();
                     
                     // context.Database.EnsureDeleted ();
                     // context.Database.EnsureCreated ();
                     // context.Seed ();
 
-                    context.Database.Migrate ();
-                    bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "true";
-                    if (isSeed) {
-                        context.Seed ();
-                    }
+                    //context.Database.Migrate ();
+                    // bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "true";
+                    // if (isSeed) {
+                    //     context.Seed ();
+                    // }
                 }
             }
         }
