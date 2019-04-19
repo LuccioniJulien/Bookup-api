@@ -33,10 +33,8 @@ namespace BaseApi.Controllers {
                 var word = predicat?.ToUpper ();
                 var queryTags = _context.Tags.Where (x => x.Name.ToUpper ().Contains (word))
                     .Select (x => x.Name);
-                var test = queryTags.ToList ();
                 var queryCategory = _context.Categories.Where (x => x.Name.ToUpper ().Contains (word))
                     .Select (x => x.Name);
-                var test2 = queryCategory.ToList ();
                 var query = queryTags.Union (queryCategory);
 
                 List<string> tags = await query.ToListAsync ();
@@ -44,7 +42,36 @@ namespace BaseApi.Controllers {
             } catch (Exception e) {
                 return StatusCode (500);
             }
+        }
 
+        /// <summary>
+        /// Get random Tags and Categories
+        /// </summary>
+        /// <param name="number">
+        /// Number of random tag to return
+        /// </param>
+        /// <returns>Tags and categories</returns>
+        /// <response code="200">Return tags and gategories</response>
+        /// <response code="400">Wrong number of tags</response>
+        [HttpGet ("{number}")]
+        public async Task<ActionResult<IEnumerable<Tag>>> Get (int number) {
+            if (number < 1) return BadRequest ("number must be > 0".ToBadRequest ());
+            try {
+                var tags = await _context.Tags.Select (x => x.Name).ToListAsync ();
+                var categories = await _context.Categories.Select (x => x.Name).ToListAsync ();
+                tags.AddRange (categories);
+                tags = tags.Distinct ().ToList ();
+                if (number > tags.Count) return BadRequest ("number is to hight".ToBadRequest ());
+                var result = new List<string> ();
+                for (int i = 0; i < number; i++) {
+                    var random = new Random ();
+                    int num = random.Next (tags.Count - 1);
+                    result.Add (tags[num]);
+                }
+                return Ok (Format.ToMessage (result, 200));
+            } catch (Exception e) {
+                return StatusCode (500);
+            }
         }
     }
 }
