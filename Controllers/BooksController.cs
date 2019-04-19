@@ -125,6 +125,8 @@ namespace BaseApi.Controllers {
                 }
 
                 if (tagFromDb != null) {
+                    var asso = await _context.Taggeds.FirstOrDefaultAsync (x => x.BookId == id || x.TagId == tagFromDb.Id);
+                    if (asso != null) return Created ("Add tag", Format.ToMessage ("Created", 201));
                     var newAssociation = new Tagged { TagId = tagFromDb.Id, BookId = id };
                     _context.Taggeds.Add (newAssociation);
                     await _context.SaveChangesAsync ();
