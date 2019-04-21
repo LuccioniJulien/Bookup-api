@@ -103,6 +103,15 @@ namespace BaseApi.Controllers {
         /// <summary>
         /// Add a tag to a book
         /// </summary>
+        /// <remarks>
+        /// Sample request:
+        /// 
+        ///     PUT /api/Books
+        ///     {
+        ///        "name":"Humour Noir",
+        ///     }
+        /// 
+        /// </remarks>
         /// <param name="tag">
         ///  a tag, required : { name:string }
         /// </param>
@@ -112,7 +121,7 @@ namespace BaseApi.Controllers {
         /// </param>
         /// <returns>Tag</returns>
         /// <response code="201">Return message "Created"</response>
-        /// <response code="400">Not found</response>
+        /// <response code="400">Bad request</response>
         [HttpPut ("{id}")]
         public async Task<ActionResult> Put (Guid id, [FromBody] Tag tag) {
             try {
