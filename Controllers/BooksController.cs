@@ -52,7 +52,7 @@ namespace BaseApi.Controllers {
                         .Select (c => c.Book));
                 }
                 if (!string.IsNullOrEmpty (author)) {
-                    queryOrdered = queryOrdered.Intersect (_context.Writtens.Where (x => x.Author.Name.ToUpper() == author.ToUpper())
+                    queryOrdered = queryOrdered.Intersect (_context.Writtens.Where (x => x.Author.Name.ToUpper () == author.ToUpper ())
                         .Select (a => a.Book));
                 }
 
@@ -71,6 +71,53 @@ namespace BaseApi.Controllers {
             }
         }
 
+        /// <summary>
+        /// Get books
+        /// </summary>
+        /// <param name="categories">
+        /// string with category concatened by a ','   : category=leto,scout
+        /// </param>
+        /// <param name="skip">
+        /// Skip
+        /// </param>
+        /// <param name="take">
+        /// Max
+        /// </param>
+        /// <param name="orderBy">
+        /// asc or desc
+        /// </param>
+        /// <returns>Books</returns>
+        /// <response code="200">Return books</response>
+        [HttpGet ("[action]")]
+        public async Task<ActionResult<IEnumerable<Book>>> GetByCategories ([FromQuery] string categories, [FromQuery] int skip = 0, [FromQuery] int take = 15, [FromQuery] string orderBy = "asc") {
+            try {
+                // construction de la query
+                IQueryable<Book> queryOrdered = (orderBy.Equals ("asc") ? _context.Books.OrderBy (x => x.Title) : _context.Books.OrderByDescending (x => x.Title)).AsQueryable ();
+
+                if (!string.IsNullOrEmpty (categories)) {
+                    var listC = categories.Split (",").Select (x => x.ToUpper ());
+                    queryOrdered = queryOrdered.Intersect (_context.Categorizeds.Where (x => listC.Contains (x.Category.Name.ToUpper ()))
+                        .Select (c => c.Book));
+                    queryOrdered = queryOrdered.Union (_context.Taggeds.Where (x => listC.Contains (x.Tag.Name.ToUpper ()))
+                        .Select (c => c.Book));
+                } else {
+                    return BadRequest ("no category found".ToBadRequest ());
+                }
+
+                var limitedQuery = queryOrdered
+                    .Skip (skip)
+                    .Take (take)
+                    .Select (x => new {
+                        x.Id, x.Isbn, x.Title, x.Thumbnail, Tags = x.Categorized.Select (c => c.Category.Name).Union (x.Taggeds.Select (t => t.Tag.Name))
+                    });
+
+                // la query est executée et le resultat est recuperé en mémoire
+                var books = await limitedQuery.ToListAsync ();
+                return Ok (Format.ToMessage (books, 200));
+            } catch (Exception e) {
+                return StatusCode (500);
+            }
+        }
         /// <summary>
         /// Get book
         /// </summary>
