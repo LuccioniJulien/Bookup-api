@@ -48,7 +48,7 @@ namespace BaseApi.Controllers {
                 if (!string.IsNullOrEmpty (category)) {
                     queryOrdered = queryOrdered.Intersect (_context.Categorizeds.Where (x => x.Category.Name == category)
                         .Select (c => c.Book));
-                    queryOrdered = queryOrdered.Intersect (_context.Taggeds.Where (x => x.Tag.Name == category)
+                    queryOrdered = queryOrdered.Union (_context.Taggeds.Where (x => x.Tag.Name == category)
                         .Select (c => c.Book));
                 }
                 if (!string.IsNullOrEmpty (author)) {
