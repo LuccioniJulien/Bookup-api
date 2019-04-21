@@ -47,8 +47,10 @@ namespace BaseApi.Controllers {
         [HttpGet ("[action]")]
         public async Task<ActionResult<IEnumerable<Tag>>> GetAll () {
             try {
-                List<string> tags = await _context.Tags.Select (x => x.Name).ToListAsync ();
-                return Ok (Format.ToMessage (tags, 200));
+                var tags = _context.Categories.Select (x => x.Name);
+                var categories = _context.Tags.Select (x => x.Name);
+                var result = await (tags.Union (categories)).ToListAsync ();
+                return Ok (Format.ToMessage (tags.Union (categories), 200));
             } catch (Exception e) {
                 return StatusCode (500);
             }
