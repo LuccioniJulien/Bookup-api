@@ -46,13 +46,13 @@ namespace BaseApi.Controllers {
                 IQueryable<Book> queryOrdered = (orderBy.Equals ("asc") ? _context.Books.OrderBy (x => x.Title) : _context.Books.OrderByDescending (x => x.Title)).AsQueryable ();
 
                 if (!string.IsNullOrEmpty (category)) {
-                    queryOrdered = queryOrdered.Intersect (_context.Categorizeds.Where (x => x.Category.Name == category)
+                    queryOrdered = queryOrdered.Intersect (_context.Categorizeds.Where (x => x.Category.Name.ToUpper () == category.ToUpper ())
                         .Select (c => c.Book));
-                    queryOrdered = queryOrdered.Union (_context.Taggeds.Where (x => x.Tag.Name == category)
+                    queryOrdered = queryOrdered.Union (_context.Taggeds.Where (x => x.Tag.Name.ToUpper () == category.ToUpper ())
                         .Select (c => c.Book));
                 }
                 if (!string.IsNullOrEmpty (author)) {
-                    queryOrdered = queryOrdered.Intersect (_context.Writtens.Where (x => x.Author.Name == author)
+                    queryOrdered = queryOrdered.Intersect (_context.Writtens.Where (x => x.Author.Name.ToUpper() == author.ToUpper())
                         .Select (a => a.Book));
                 }
 
