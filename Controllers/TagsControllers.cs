@@ -44,6 +44,16 @@ namespace BaseApi.Controllers {
             }
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Tag>>> Get () {
+            try {
+                List<string> tags = await _context.Tags.Select (x => x.Name).ToListAsync ();
+                return Ok (Format.ToMessage (tags, 200));
+            } catch (Exception e) {
+                return StatusCode (500);
+            }
+        }
+
         /// <summary>
         /// Get random Tags and Categories
         /// </summary>
