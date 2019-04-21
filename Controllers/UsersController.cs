@@ -198,16 +198,6 @@ namespace BaseApi.Controllers {
         /// <summary>
         ///  Set avatar url
         /// </summary>
-        /// <remarks>
-        /// Sample request:
-        /// 
-        ///     POST /api/users/Auth
-        ///     {
-        ///        "email":"juju@ju.ju,
-        ///        "password":"Warcraft3?",
-        ///     }
-        /// 
-        /// </remarks>
         /// <param name="files">
         ///  A png or jpg
         /// </param>
