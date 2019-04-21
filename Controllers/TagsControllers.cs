@@ -44,8 +44,8 @@ namespace BaseApi.Controllers {
             }
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Tag>>> Get () {
+        [HttpGet ("[action]")]
+        public async Task<ActionResult<IEnumerable<Tag>>> GetAll () {
             try {
                 List<string> tags = await _context.Tags.Select (x => x.Name).ToListAsync ();
                 return Ok (Format.ToMessage (tags, 200));
