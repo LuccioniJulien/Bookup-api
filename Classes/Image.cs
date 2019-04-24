@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace BaseApi.Helper {
+namespace BaseApi.Classes {
     public class FIleUploadAPI {
         public IFormFile files { get; set; }
     }

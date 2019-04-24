@@ -6,6 +6,7 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using BaseApi.Classes;
 using BaseApi.Helper;
 using BaseApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -60,8 +61,8 @@ namespace BaseApi.Controllers {
                     return BadRequest (ModelState.ToBadRequest (400));
                 }
 
-                bool isEmailAlreadyTaken = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email) != null;
-                if (isEmailAlreadyTaken) {
+                var UserWithSameEMail = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
+                if (UserWithSameEMail != null) {
                     return BadRequest ("Email already taken".ToBadRequest ());
                 }
 
@@ -96,17 +97,18 @@ namespace BaseApi.Controllers {
         /// <response code="401">If the password is wrong</response> 
         [AllowAnonymous]
         [HttpPost ("[action]")]
-        public async Task<ActionResult<string>> Auth ([FromBody] User user) {
+        public async Task<ActionResult<string>> Auth ([FromBody] Login user) {
             try {
                 if (user == null) {
-                    return BadRequest ();
+                    return BadRequest ("Body is null".ToBadRequest ());
                 }
-
+                if (!ModelState.IsValid) {
+                    return BadRequest (ModelState.ToBadRequest ());
+                }
                 User userFromDb = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
                 if (userFromDb == null) {
                     return BadRequest ("Wrong email".ToBadRequest ());
                 }
-
                 if (!userFromDb.Compare (user.Password)) {
                     return Unauthorized ("Wrong password".ToBadRequest ());
                 }
@@ -117,29 +119,6 @@ namespace BaseApi.Controllers {
                 return StatusCode (500);
             }
         }
-
-        // [HttpPatch ("action]")]
-        // public async Task<ActionResult<string>> Password ([FromBody] User user) {
-        //     try {
-        //         if (user == null) {
-        //             return BadRequest ();
-        //         }
-
-        //         User userFromDb = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
-        //         if (userFromDb == null) {
-        //             return BadRequest ("Wrong email".ToBadRequest ());
-        //         }
-
-        //         if (!userFromDb.Compare (user.Password)) {
-        //             return Unauthorized ("Wrong password".ToBadRequest ());
-        //         }
-        //         var token = JWT.GetToken (userFromDb);
-
-        //         return Created ("login", Format.ToMessage (userFromDb.ToMessage (), 201, token));
-        //     } catch (Exception e) {
-        //         return StatusCode (500);
-        //     }
-        // }
 
         [HttpGet]
         public async Task<ActionResult<User>> Get () {
@@ -155,41 +134,75 @@ namespace BaseApi.Controllers {
             }
         }
 
-        [HttpPut ("{id}")]
-        public async Task<ActionResult<string>> Put (Guid id, [FromBody] User user) {
+        /// <summary>
+        ///  Change informations of an user
+        /// </summary>
+        /// <param name="infos">
+        ///  {  name:string  , email:string }
+        /// </param>
+        /// <response code="201">Sucess</response>
+        /// <response code="400">Bad request </response>
+        /// <response code="401">If the jwt is wrong</response> 
+        [HttpPatch ("[action]")]
+        public async Task<ActionResult<User>> Patch ([FromBody] InfoUser infos) {
             try {
-                if (user == null) {
-                    return BadRequest ("user object is null".ToBadRequest ());
-                }
-
                 var uuid = Guid.Parse (User.Identity.Name);
-                var uuidFromQuery = id;
-                User userFromDb = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuidFromQuery);
                 User userFromTokenId = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuid);
-                if ((userFromTokenId == null) || (userFromDb?.Id != userFromTokenId?.Id)) {
+
+                if (userFromTokenId == null) {
                     return Unauthorized ();
                 }
-
-                User userWithSameLogin = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
-                if (userWithSameLogin != null) {
-                    return BadRequest ("Login already taken".ToBadRequest ());
-                }
-
                 if (!ModelState.IsValid) {
                     return BadRequest (ModelState.ToBadRequest ());
                 }
+                var (name, email) = infos;
 
-                var (name, email, password, passwordConfirmation) = user;
-                userFromDb.Name = name;
-                userFromDb.Email = email;
-                userFromDb.Password = password;
-                userFromDb.PasswordConfirmation = passwordConfirmation;
-                userFromDb.SetPasswordhHash ();
+                var userWithSameEmail = _context.Users.FirstOrDefaultAsync (u => u.Email == email);
+                if (userWithSameEmail != null) {
+                    return BadRequest ("Email is already in use".ToBadRequest ());
+                }
 
-                _context.Update (userFromDb);
+                userFromTokenId.Name = name;
+                userFromTokenId.Name = email;
+
+                _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
 
-                return StatusCode (201);
+                return Ok (Format.ToMessage ("Success", 201));
+            } catch (Exception e) {
+                return StatusCode (500);
+            }
+        }
+
+        /// <summary>
+        ///  Change password of an user
+        /// </summary>
+        /// <param name="passwords">
+        ///  {  password:string  , passwordConfirmation:string }
+        /// </param>
+        /// <response code="201">Sucess</response>
+        /// <response code="400">Bad request </response>
+        /// <response code="401">If the jwt is wrong</response> 
+        [HttpPatch ("[action]")]
+        public async Task<ActionResult<User>> ChangePassword ([FromBody] PasswordHelper passwords) {
+            try {
+                var uuid = Guid.Parse (User.Identity.Name);
+                User userFromTokenId = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuid);
+
+                if (userFromTokenId == null) {
+                    return Unauthorized ();
+                }
+                if (!ModelState.IsValid) {
+                    return BadRequest (ModelState.ToBadRequest ());
+                }
+                var (password, _) = passwords;
+
+                userFromTokenId.Password = password;
+                userFromTokenId.SetPasswordhHash ();
+                _context.Update (userFromTokenId);
+                await _context.SaveChangesAsync ();
+
+                return Ok (Format.ToMessage ("Success", 201));
             } catch (Exception e) {
                 return StatusCode (500);
             }
@@ -246,22 +259,6 @@ namespace BaseApi.Controllers {
             }
 
         }
-        // [AllowAnonymous]
-        // [HttpPost]
-        // public ActionResult<string> Post (FIleUploadAPI files) {
-        //     try {
-        //         if (!Directory.Exists (_environment.WebRootPath + "\\uploads\\")) {
-        //             Directory.CreateDirectory (_environment.WebRootPath + "\\uploads\\");
-        //         }
-        //         using (FileStream filestream = System.IO.File.Create (_environment.WebRootPath + "\\uploads\\" + files.files.FileName)) {
-        //             files.files.CopyTo (filestream);
-        //             filestream.Flush ();
-        //         }
-        //         return Created ("image", "\\uploads\\" + files.files.FileName);
-        //     } catch (Exception e) {
-        //         return StatusCode (500);
-        //     }
-        // }
 
         // [HttpDelete ("{id}")]
         // public async Task<ActionResult> Delete (Guid id) {
