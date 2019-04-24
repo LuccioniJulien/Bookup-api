@@ -29,7 +29,7 @@ namespace BaseApi.Helper {
                         return name;
                     }
                 }
-            } catch (Exception e) {
+            } catch {
 
                 return null;
             }

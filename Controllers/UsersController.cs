@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Core;
 
 namespace BaseApi.Controllers {
     [Authorize (AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -19,8 +21,11 @@ namespace BaseApi.Controllers {
     [Route ("api/[controller]")]
     public class UsersController : Controller {
         private readonly DBcontext _context;
-        public UsersController (DBcontext context) {
+        private readonly Logger _log;
+        public UsersController (DBcontext context, LoggerConfiguration config) {
             this._context = context;
+            this._log = config.WriteTo.Console ()
+                .CreateLogger ();
         }
         /// <summary>
         /// Register a User
@@ -51,6 +56,8 @@ namespace BaseApi.Controllers {
                     return BadRequest ("user object is null".ToBadRequest ());
                 }
 
+                _log.Information ("User trying to sign up, Body: {@body} on {date}", user.ToMessage (), DateTime.Now);
+
                 if (!ModelState.IsValid) {
                     return BadRequest (ModelState.ToBadRequest (400));
                 }
@@ -63,11 +70,20 @@ namespace BaseApi.Controllers {
                 user.SetPasswordhHash ();
                 _context.Add (user);
                 await _context.SaveChangesAsync ();
+
+                _log.Information ("User created : {@User} on {date} ", user.ToMessage (), DateTime.Now);
                 // Envoi d'un mail
-                await MailerSendGrid.Send (user.Email);
+                bool isEmailSend = await MailerSendGrid.Send (user.Email);
+
+                if (isEmailSend) {
+                    _log.Information ("Email was sent for {User} on {date} ", user.Id, DateTime.Now);
+                } else {
+                    _log.Information ("Email was not sent for {User} on {date} ", user.Id, DateTime.Now);
+                }
 
                 return Created ("register", Format.ToMessage (user.ToMessage (), 201));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Register User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -98,6 +114,7 @@ namespace BaseApi.Controllers {
                 if (user == null) {
                     return BadRequest ("Body is null".ToBadRequest ());
                 }
+                _log.Information ("User {email} trying to Sign in on {date} ", user.Email, DateTime.Now);
                 if (!ModelState.IsValid) {
                     return BadRequest (ModelState.ToBadRequest ());
                 }
@@ -109,9 +126,10 @@ namespace BaseApi.Controllers {
                     return Unauthorized ("Wrong password".ToBadRequest ());
                 }
                 var token = JWT.GetToken (userFromDb);
-
+                _log.Information ("User {email} Sign in on {date} ", user.Email, DateTime.Now);
                 return Created ("login", Format.ToMessage (userFromDb.ToMessage (), 201, token));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Auth User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -124,8 +142,10 @@ namespace BaseApi.Controllers {
                 if (userFromTokenId == null) {
                     return Unauthorized ();
                 }
+                _log.Information ("Information  of {User} was sent on {date} ", userFromTokenId.Id, DateTime.Now);
                 return Ok (Format.ToMessage (userFromTokenId.ToMessage (), 201));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Get User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -139,7 +159,7 @@ namespace BaseApi.Controllers {
         /// <response code="201">Sucess</response>
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
-        [HttpPatch ("[action]")]
+        [HttpPatch]
         public async Task<ActionResult<User>> Patch ([FromBody] InfoUser infos) {
             try {
                 var uuid = Guid.Parse (User.Identity.Name);
@@ -151,10 +171,10 @@ namespace BaseApi.Controllers {
                 if (!ModelState.IsValid) {
                     return BadRequest (ModelState.ToBadRequest ());
                 }
-                
+
                 var (name, email) = infos;
-                var userWithSameEmail = _context.Users.FirstOrDefaultAsync (u => u.Email == email);
-                if (userWithSameEmail != null) {
+                var userWithSameEmail = await _context.Users.FirstOrDefaultAsync (u => u.Email == email);
+                if (userWithSameEmail != null && userWithSameEmail.Email != userFromTokenId.Email) {
                     return BadRequest ("Email is already in use".ToBadRequest ());
                 }
 
@@ -163,9 +183,10 @@ namespace BaseApi.Controllers {
 
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
-
+                _log.Information ("User {Email} has changed his/her information on {date} ", userFromTokenId.Email, DateTime.Now);
                 return Ok (Format.ToMessage ("Success", 201));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Patch User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -197,9 +218,10 @@ namespace BaseApi.Controllers {
                 userFromTokenId.SetPasswordhHash ();
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
-
+                _log.Information ("User {Email} has changed his/her password on {date} ", userFromTokenId.Email, DateTime.Now);
                 return Ok (Format.ToMessage ("Success", 201));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on ChangePassword User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -237,9 +259,10 @@ namespace BaseApi.Controllers {
                 userFromTokenId.SetAvatar (name);
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
+                _log.Information ("User {Email} has changed his/her avatar_url on {date} ", userFromTokenId.Email, DateTime.Now);
                 return Created ("img", Format.ToMessage (userFromTokenId.ToMessage (), 201));
             } catch (Exception e) {
-                Console.WriteLine (e.Message);
+                _log.Fatal (e.Message + "on Put User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
 

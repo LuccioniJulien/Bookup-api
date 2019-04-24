@@ -7,14 +7,19 @@ using BaseApi.Helper;
 using BaseApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Core;
 
 namespace BaseApi.Controllers {
     [Produces ("application/json")]
     [Route ("api/[controller]")]
     public class TagsController : Controller {
         private readonly DBcontext _context;
-        public TagsController (DBcontext context) {
+        private readonly Logger _log;
+        public TagsController (DBcontext context, LoggerConfiguration config) {
             this._context = context;
+            this._log = config.WriteTo.Console ()
+                .CreateLogger ();
         }
 
         /// <summary>
@@ -31,6 +36,7 @@ namespace BaseApi.Controllers {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Tag>>> Get ([FromQuery] string predicat, [FromQuery] int take = 6) {
             try {
+                _log.Information ("Get Tags with predicat requested on {Date}", DateTime.Now);
                 var word = predicat?.ToUpper ();
                 var queryTags = _context.Tags.GetNamesTags (word);
                 var queryCategory = _context.Categories.GetNamesCategory (word);
@@ -38,6 +44,7 @@ namespace BaseApi.Controllers {
                 List<string> Tags = await query.ToListAsync ();
                 return Ok (Format.ToMessage (Tags, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + " on Get Tags on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -45,11 +52,13 @@ namespace BaseApi.Controllers {
         [HttpGet ("[action]")]
         public async Task<ActionResult<IEnumerable<Tag>>> GetAll () {
             try {
+                _log.Information ("GetAll Tags requested on {Date}", DateTime.Now);
                 var queryTags = _context.Tags.GetNamesTags ();
                 var queryCategory = _context.Categories.GetNamesCategory ();
                 List<string> result = await (queryTags.Union (queryCategory)).ToListAsync ();
                 return Ok (Format.ToMessage (result, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + " on GetAll Tags on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -65,6 +74,7 @@ namespace BaseApi.Controllers {
         /// <response code="400">Wrong number of tags</response>
         [HttpGet ("{number}")]
         public async Task<ActionResult<IEnumerable<Tag>>> Get (int number) {
+            _log.Information ("Get random Tags requested on {Date}", DateTime.Now);
             if (number < 1) return BadRequest ("number must be > 0".ToBadRequest ());
             try {
                 var queryTags = _context.Tags.GetNamesTags ();
@@ -84,6 +94,7 @@ namespace BaseApi.Controllers {
 
                 return Ok (Format.ToMessage (result, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + " Get Tags on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }

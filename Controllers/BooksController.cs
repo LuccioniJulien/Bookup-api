@@ -9,6 +9,8 @@ using BaseApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Core;
 
 namespace BaseApi.Controllers {
     // [Authorize (AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -17,8 +19,11 @@ namespace BaseApi.Controllers {
     public class BooksController : Controller {
 
         private readonly DBcontext _context;
-        public BooksController (DBcontext context) {
+        private readonly Logger _log;
+        public BooksController (DBcontext context, LoggerConfiguration config) {
             this._context = context;
+            this._log = config.WriteTo.Console ()
+                .CreateLogger ();
         }
         /// <summary>
         /// Get books
@@ -43,6 +48,7 @@ namespace BaseApi.Controllers {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Book>>> Get ([FromQuery] string author, [FromQuery] string category, [FromQuery] int skip = 0, [FromQuery] int take = 15, [FromQuery] string orderBy = "asc") {
             try {
+                _log.Information ("Get Books requested on {Date}", DateTime.Now);
                 // construction de la requête
                 IQueryable<Book> queryOrdered = _context.Books.GetBooks (orderBy);
 
@@ -60,6 +66,7 @@ namespace BaseApi.Controllers {
                 var books = await limitedQuery.ToListAsync ();
                 return Ok (Format.ToMessage (books, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Get Books on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -84,6 +91,7 @@ namespace BaseApi.Controllers {
         [HttpGet ("[action]")]
         public async Task<ActionResult<IEnumerable<Book>>> GetByCategories ([FromQuery] string categories, [FromQuery] int skip = 0, [FromQuery] int take = 15, [FromQuery] string orderBy = "asc") {
             try {
+                _log.Information ("GetByCategories Books requested on {Date}", DateTime.Now);
                 // construction de la query
                 IQueryable<Book> queryOrdered = _context.Books.GetBooks (orderBy);
 
@@ -101,6 +109,7 @@ namespace BaseApi.Controllers {
                 var books = await limitedQuery.ToListAsync ();
                 return Ok (Format.ToMessage (books, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on GetByCategories Books on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -115,8 +124,8 @@ namespace BaseApi.Controllers {
         /// <response code="404">Not found</response>
         [HttpGet ("{isbn}")]
         public async Task<ActionResult<Book>> Get (string isbn) {
-            // construction de la query
             try {
+                _log.Information ("Get by isbn Books requested on {Date}", DateTime.Now);
                 var result = await _context.Books.GetBookInfoAsync (isbn);
                 if (result == null) {
                     var isFound = await Book.SaveNewBookFromGoogle (isbn: isbn);
@@ -126,7 +135,8 @@ namespace BaseApi.Controllers {
                     result = await _context.Books.GetBookInfoAsync (isbn);
                 }
                 return Ok (Format.ToMessage (result, 200));
-            } catch (System.Exception) {
+            } catch (Exception e) {
+                _log.Fatal (e.Message + "on Register User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -156,6 +166,7 @@ namespace BaseApi.Controllers {
         [HttpPut ("{id}")]
         public async Task<ActionResult> Put (Guid id, [FromBody] Tag tag) {
             try {
+                _log.Information ("Add tag to Books requested on {Date}", DateTime.Now);
                 var tagFromDb = await _context.Tags.FirstOrDefaultAsync (x => x.Name == tag.Name);
                 var bookFromDb = await _context.Books.FirstOrDefaultAsync (x => x.Id == id);
 
@@ -184,12 +195,12 @@ namespace BaseApi.Controllers {
                 var newTagged = new Tagged { TagId = tag.Id, BookId = id };
                 _context.Taggeds.Add (newTagged);
                 await _context.SaveChangesAsync ();
-                
+
                 return Created ("Add tag", Format.ToMessage ("Created", 201));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Get Books on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
-
         }
     }
 }

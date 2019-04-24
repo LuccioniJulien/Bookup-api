@@ -99,7 +99,7 @@ namespace BaseApi.Models {
                         context.SaveChanges ();
                     }
 
-                } catch (Exception e) {
+                } catch {
                     // Console.WriteLine (e.Message);
                 }
 

@@ -5,7 +5,7 @@ using SendGrid.Helpers.Mail;
 
 namespace BaseApi.Helper {
     public class MailerSendGrid {
-        public static async Task Send (string destination) {
+        public static async Task<bool> Send (string destination) {
             var apiKey = Environment.GetEnvironmentVariable ("SENDGRID_API_KEY");
             var client = new SendGridClient (apiKey);
             var from = new EmailAddress ("noreply@bookup.com", "I am noreply");
@@ -15,8 +15,10 @@ namespace BaseApi.Helper {
             var msg = MailHelper.CreateSingleEmail (from, to, subject, "", htmlContent);
             try {
                 await client.SendEmailAsync (msg);
+                return true;
             } catch (Exception e) {
-                Console.WriteLine(e.Message);
+                Console.WriteLine (e.Message);
+                return false;
             }
         }
     }
