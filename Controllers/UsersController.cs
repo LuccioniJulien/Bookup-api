@@ -2,10 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Amazon;
-using Amazon.S3;
-using Amazon.S3.Model;
-using Amazon.S3.Transfer;
 using BaseApi.Classes;
 using BaseApi.Helper;
 using BaseApi.Models;
@@ -61,15 +57,17 @@ namespace BaseApi.Controllers {
                     return BadRequest (ModelState.ToBadRequest (400));
                 }
 
-                var UserWithSameEMail = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
-                if (UserWithSameEMail != null) {
+                var userWithSameEMail = await _context.Users.FirstOrDefaultAsync (u => u.Email == user.Email);
+                if (userWithSameEMail != null) {
                     return BadRequest ("Email already taken".ToBadRequest ());
                 }
 
                 user.SetPasswordhHash ();
                 _context.Add (user);
                 await _context.SaveChangesAsync ();
+                // Envoi d'un mail
                 await MailerSendGrid.Send (user.Email);
+
                 return Created ("register", Format.ToMessage (user.ToMessage (), 201));
             } catch (Exception e) {
                 return StatusCode (500);
@@ -195,8 +193,8 @@ namespace BaseApi.Controllers {
                 if (!ModelState.IsValid) {
                     return BadRequest (ModelState.ToBadRequest ());
                 }
-                var (password, _) = passwords;
 
+                var (password, _) = passwords;
                 userFromTokenId.Password = password;
                 userFromTokenId.SetPasswordhHash ();
                 _context.Update (userFromTokenId);
@@ -211,7 +209,7 @@ namespace BaseApi.Controllers {
         /// <summary>
         ///  Set avatar url
         /// </summary>
-        /// <param name="files">
+        /// <param name="UplodedFile">
         ///  A png or jpg
         /// </param>
         /// <returns>url of the avatar</returns>
@@ -219,40 +217,29 @@ namespace BaseApi.Controllers {
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
         [HttpPut]
-        public async Task<ActionResult> Put (FIleUploadAPI files) {
+        public async Task<ActionResult> Put (FIleUploadAPI UplodedFile) {
             var uuid = Guid.Parse (User.Identity.Name);
             User userFromTokenId = await _context.Users.FirstOrDefaultAsync (u => u.Id == uuid);
             if (userFromTokenId == null) {
                 return Unauthorized ();
             }
-            if (files.files == null) {
+
+            if (UplodedFile.files == null) {
                 return BadRequest ("No files found".ToBadRequest ());
             }
-            var type = files.files.ContentType;
+            var type = UplodedFile.files.ContentType;
             if (type != "image/jpeg" && type != "image/png" && type != "application/x-jpg") {
                 return BadRequest ("Only image supported".ToBadRequest ());
             }
             try {
-                var (id, key) = new AmazonCreditential ();
-                using (var client = new AmazonS3Client (id, key, RegionEndpoint.EUWest3)) {
-                    using (var newMemoryStream = new MemoryStream ()) {
-                        var name = Guid.NewGuid ().ToString () + ".png";
-                        files.files.CopyTo (newMemoryStream);
-                        var uploadRequest = new TransferUtilityUploadRequest {
-                            InputStream = newMemoryStream,
-                            Key = name,
-                            BucketName = "bookupstorapeapi",
-                            CannedACL = S3CannedACL.PublicRead
-                        };
-                        var fileTransferUtility = new TransferUtility (client);
-                        await fileTransferUtility.UploadAsync (uploadRequest);
-                        string url = "https://s3.eu-west-3.amazonaws.com/bookupstorapeapi/" + name;
-                        userFromTokenId.Avatar_url = url;
-                        _context.Update (userFromTokenId);
-                        await _context.SaveChangesAsync ();
-                        return Created ("img", Format.ToMessage (userFromTokenId.ToMessage (), 201));
-                    }
+                string name = await AmazonS3Helper.SaveImageToBucket (UplodedFile.files);
+                if (string.IsNullOrEmpty (name)) {
+                    return BadRequest ("Save failed".ToBadRequest ());
                 }
+                userFromTokenId.SetAvatar (name);
+                _context.Update (userFromTokenId);
+                await _context.SaveChangesAsync ();
+                return Created ("img", Format.ToMessage (userFromTokenId.ToMessage (), 201));
             } catch (Exception e) {
                 Console.WriteLine (e.Message);
                 return StatusCode (500);
