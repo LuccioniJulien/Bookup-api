@@ -137,7 +137,16 @@ namespace BaseApi.Controllers {
                     })
                     .FirstOrDefaultAsync (b => b.Isbn == isbn);
                 if (result == null) {
-                    return NotFound ();
+                    var isFound = await Book.SaveNewBookFromGoogle (isbn: isbn);
+
+                    if (!isFound) {
+                        return NotFound ();
+                    }
+                    result = await _context.Books.Select (x => new {
+                            x.Id, x.Isbn, x.Title, x.Thumbnail, x.Description, x.PublishedDate, Authors = x.Writtens.Select (a => a.Author.Name),
+                                Tags = x.Categorized.Select (c => c.Category.Name).Union (x.Taggeds.Select (t => t.Tag.Name))
+                        })
+                        .FirstOrDefaultAsync (b => b.Isbn == isbn);
                 }
                 // result
                 // var book = new
