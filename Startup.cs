@@ -54,7 +54,7 @@ namespace BaseApi {
                 c.SwaggerEndpoint ("/swagger/v1/swagger.json", "My API V1");
                 c.DefaultModelRendering (ModelRendering.Model);
                 c.DefaultModelExpandDepth (1);
-                
+
             });
 
             app.UseHttpsRedirection ();
@@ -68,10 +68,10 @@ namespace BaseApi {
                 .CreateScope ()) {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
                     // context.Database.Migrate();
-                   
-                    // context.Database.EnsureDeleted ();
-                    // context.Database.EnsureCreated ();
-                    // context.Seed ();
+
+                    context.Database.EnsureDeleted ();
+                    context.Database.EnsureCreated ();
+                    context.Seed ();
 
                     //context.Database.Migrate ();
                     // bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "true";

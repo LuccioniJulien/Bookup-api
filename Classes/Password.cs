@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BaseApi.Classes {
-    [NotMapped]
+
     public class PasswordHelper {
         [Required]
         public string Password { get; set; }

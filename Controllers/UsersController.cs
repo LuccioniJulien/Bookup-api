@@ -19,10 +19,8 @@ namespace BaseApi.Controllers {
     [Route ("api/[controller]")]
     public class UsersController : Controller {
         private readonly DBcontext _context;
-        public IHostingEnvironment _environment;
         public UsersController (DBcontext context) {
             this._context = context;
-            this._environment = new HostingEnvironment ();
         }
         /// <summary>
         /// Register a User
@@ -153,8 +151,8 @@ namespace BaseApi.Controllers {
                 if (!ModelState.IsValid) {
                     return BadRequest (ModelState.ToBadRequest ());
                 }
+                
                 var (name, email) = infos;
-
                 var userWithSameEmail = _context.Users.FirstOrDefaultAsync (u => u.Email == email);
                 if (userWithSameEmail != null) {
                     return BadRequest ("Email is already in use".ToBadRequest ());
