@@ -161,7 +161,7 @@ namespace BaseApi.Controllers {
         /// id of the book
         /// </param>
         /// <returns>Tag</returns>
-        /// <response code="204">success</response>
+        /// <response code="200">success</response>
         /// <response code="400">Bad request</response>
         [HttpPut ("{id}")]
         public async Task<ActionResult> Put (Guid id, [FromBody] Tag tag) {
@@ -177,12 +177,12 @@ namespace BaseApi.Controllers {
                 if (tagFromDb != null) {
                     var asso = await _context.Taggeds.FirstOrDefaultAsync (x => x.BookId == id || x.TagId == tagFromDb.Id);
 
-                    if (asso != null) return NoContent ();
+                    if (asso != null) return Ok (Format.ToMessage ("Success", 200));
 
                     var newAssociation = new Tagged { TagId = tagFromDb.Id, BookId = id };
                     _context.Taggeds.Add (newAssociation);
                     await _context.SaveChangesAsync ();
-                    return NoContent ();
+                    return Ok (Format.ToMessage ("Success", 200));
                 }
 
                 if (!ModelState.IsValid) {
@@ -196,7 +196,7 @@ namespace BaseApi.Controllers {
                 _context.Taggeds.Add (newTagged);
                 await _context.SaveChangesAsync ();
 
-                return NoContent ();
+                return Ok (Format.ToMessage ("Success", 200));
             } catch (Exception e) {
                 _log.Fatal (e.Message + "on Get Books on {Date}", DateTime.Now);
                 return StatusCode (500);
