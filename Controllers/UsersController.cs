@@ -27,6 +27,7 @@ namespace BaseApi.Controllers {
             this._log = config.WriteTo.Console ()
                 .CreateLogger ();
         }
+        
         /// <summary>
         /// Register a User
         /// </summary>
@@ -46,7 +47,7 @@ namespace BaseApi.Controllers {
         /// { "name", "email", "password", "passwordConfirmation" }
         /// </param>
         /// <returns>A user</returns>
-        /// <response code="201">Returns the created User</response>
+        /// <response code="201">Return the created User</response>
         /// <response code="400">If the User is null</response> 
         [AllowAnonymous]
         [HttpPost ("[action]")]
@@ -87,6 +88,7 @@ namespace BaseApi.Controllers {
                 return StatusCode (500);
             }
         }
+
         /// <summary>
         /// Login with a user
         /// </summary>
@@ -104,7 +106,7 @@ namespace BaseApi.Controllers {
         /// { "email", "password" }
         /// </param>
         /// <returns>A user</returns>
-        /// <response code="201">Returns the user and the jwt token</response>
+        /// <response code="201">Return the user and the jwt token</response>
         /// <response code="400">If the User is null, if the email is wrong</response>
         /// <response code="401">If the password is wrong</response> 
         [AllowAnonymous]
@@ -233,7 +235,7 @@ namespace BaseApi.Controllers {
         ///  A png or jpg
         /// </param>
         /// <returns>url of the avatar</returns>
-        /// <response code="201">Returns the user updated</response>
+        /// <response code="201">Return the user updated</response>
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
         [HttpPut]
