@@ -2,18 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BaseApi.Dao;
 using BaseApi.Helper;
 using BaseApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Core;
 
 namespace BaseApi.Controllers {
     [Produces ("application/json")]
     [Route ("api/[controller]")]
     public class TagsController : Controller {
         private readonly DBcontext _context;
-        public TagsController (DBcontext context) {
+        private readonly Logger _log;
+        public TagsController (DBcontext context, LoggerConfiguration config) {
             this._context = context;
+            this._log = config.WriteTo.Console ()
+                .CreateLogger ();
         }
 
         /// <summary>
@@ -30,16 +36,15 @@ namespace BaseApi.Controllers {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Tag>>> Get ([FromQuery] string predicat, [FromQuery] int take = 6) {
             try {
+                _log.Information ("Get Tags with predicat requested on {Date}", DateTime.Now);
                 var word = predicat?.ToUpper ();
-                var queryTags = _context.Tags.Where (x => x.Name.ToUpper ().Contains (word))
-                    .Select (x => x.Name);
-                var queryCategory = _context.Categories.Where (x => x.Name.ToUpper ().Contains (word))
-                    .Select (x => x.Name);
-                var query = queryTags.Union (queryCategory);
-
-                List<string> tags = await query.ToListAsync ();
-                return Ok (Format.ToMessage (tags.Take (take), 200));
+                var queryTags = _context.Tags.GetNamesTags (word);
+                var queryCategory = _context.Categories.GetNamesCategory (word);
+                var query = queryTags.Union (queryCategory).Take (take);
+                List<string> Tags = await query.ToListAsync ();
+                return Ok (Format.ToMessage (Tags, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + " on Get Tags on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -47,11 +52,13 @@ namespace BaseApi.Controllers {
         [HttpGet ("[action]")]
         public async Task<ActionResult<IEnumerable<Tag>>> GetAll () {
             try {
-                var tags = _context.Categories.Select (x => x.Name);
-                var categories = _context.Tags.Select (x => x.Name);
-                var result = await (tags.Union (categories)).ToListAsync ();
-                return Ok (Format.ToMessage (tags.Union (categories), 200));
+                _log.Information ("GetAll Tags requested on {Date}", DateTime.Now);
+                var queryTags = _context.Tags.GetNamesTags ();
+                var queryCategory = _context.Categories.GetNamesCategory ();
+                List<string> result = await (queryTags.Union (queryCategory)).ToListAsync ();
+                return Ok (Format.ToMessage (result, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + " on GetAll Tags on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -67,21 +74,27 @@ namespace BaseApi.Controllers {
         /// <response code="400">Wrong number of tags</response>
         [HttpGet ("{number}")]
         public async Task<ActionResult<IEnumerable<Tag>>> Get (int number) {
+            _log.Information ("Get random Tags requested on {Date}", DateTime.Now);
             if (number < 1) return BadRequest ("number must be > 0".ToBadRequest ());
             try {
-                var tags = await _context.Tags.Select (x => x.Name).ToListAsync ();
-                var categories = await _context.Categories.Select (x => x.Name).ToListAsync ();
-                tags.AddRange (categories);
-                tags = tags.Distinct ().ToList ();
-                if (number > tags.Count) return BadRequest ("number is to hight".ToBadRequest ());
+                var queryTags = _context.Tags.GetNamesTags ();
+                var queryCategory = _context.Categories.GetNamesCategory ();
+                var query = queryTags.Union (queryCategory).Distinct ();
+
+                int queryCount = query.Count ();
+                if (number > queryCount) return BadRequest ("number is to hight".ToBadRequest ());
                 var result = new List<string> ();
+
                 for (int i = 0; i < number; i++) {
                     var random = new Random ();
-                    int num = random.Next (tags.Count - 1);
-                    result.Add (tags[num]);
+                    int num = random.Next (queryCount - 1);
+                    string tag = await query.Skip (num).FirstAsync ();
+                    result.Add (tag);
                 }
+
                 return Ok (Format.ToMessage (result, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + " Get Tags on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }

@@ -36,6 +36,8 @@ namespace BaseApi.Models {
         }
         public void SetPasswordhHash () => PasswordHash = BCrypt.Net.BCrypt.HashPassword (input: Password);
         public bool Compare (string password) => BCrypt.Net.BCrypt.Verify (password, PasswordHash);
+
+        public void SetAvatar (string name) => Avatar_url = "https://s3.eu-west-3.amazonaws.com/bookupstorapeapi/" + name;
         public object ToMessage () => new { Id, Name, Email, Avatar_url };
         public void Deconstruct (out string name, out string mail, out string password, out string passwordConfirmation) {
             name = Name;

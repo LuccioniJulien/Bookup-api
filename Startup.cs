@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -29,6 +30,7 @@ namespace BaseApi {
             services.AddMvc ().SetCompatibilityVersion (CompatibilityVersion.Version_2_2);
             services.AddDotEnv ();
             services.AddNpgsqlContext ();
+            services.AddScoped<LoggerConfiguration> ();
             services.AddJWT ();
             services.AddSwaggerGen (c => {
                 c.SwaggerDoc ("v1", new Info { Title = "My API", Version = "v1" });
@@ -54,7 +56,7 @@ namespace BaseApi {
                 c.SwaggerEndpoint ("/swagger/v1/swagger.json", "My API V1");
                 c.DefaultModelRendering (ModelRendering.Model);
                 c.DefaultModelExpandDepth (1);
-                
+
             });
 
             app.UseHttpsRedirection ();
@@ -67,13 +69,8 @@ namespace BaseApi {
                 .GetRequiredService<IServiceScopeFactory> ()
                 .CreateScope ()) {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
-                    context.Database.Migrate();
-                   
-                    // context.Database.EnsureDeleted ();
-                    // context.Database.EnsureCreated ();
-                    // context.Seed ();
+                    context.Database.Migrate ();
 
-                    //context.Database.Migrate ();
                     // bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "true";
                     // if (isSeed) {
                     //     context.Seed ();

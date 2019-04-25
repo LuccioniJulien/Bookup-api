@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using BaseApi.Dao;
 using BaseApi.Helper;
 using BaseApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Core;
 
 namespace BaseApi.Controllers {
     // [Authorize (AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -16,8 +19,11 @@ namespace BaseApi.Controllers {
     public class BooksController : Controller {
 
         private readonly DBcontext _context;
-        public BooksController (DBcontext context) {
+        private readonly Logger _log;
+        public BooksController (DBcontext context, LoggerConfiguration config) {
             this._context = context;
+            this._log = config.WriteTo.Console ()
+                .CreateLogger ();
         }
         /// <summary>
         /// Get books
@@ -42,31 +48,25 @@ namespace BaseApi.Controllers {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Book>>> Get ([FromQuery] string author, [FromQuery] string category, [FromQuery] int skip = 0, [FromQuery] int take = 15, [FromQuery] string orderBy = "asc") {
             try {
-                // construction de la query
-                IQueryable<Book> queryOrdered = (orderBy.Equals ("asc") ? _context.Books.OrderBy (x => x.Title) : _context.Books.OrderByDescending (x => x.Title)).AsQueryable ();
+                _log.Information ("Get Books requested on {Date}", DateTime.Now);
+                // construction de la requête
+                IQueryable<Book> queryOrdered = _context.Books.GetBooks (orderBy);
 
                 if (!string.IsNullOrEmpty (category)) {
-                    queryOrdered = queryOrdered.Intersect (_context.Categorizeds.Where (x => x.Category.Name.ToUpper () == category.ToUpper ())
-                        .Select (c => c.Book));
-                    queryOrdered = queryOrdered.Union (_context.Taggeds.Where (x => x.Tag.Name.ToUpper () == category.ToUpper ())
-                        .Select (c => c.Book));
+                    var queryBooksByCategory = _context.Categorizeds.GetBooksByCategory (category);
+                    var queryBooksByTag = _context.Taggeds.GetBooksByTag (category);
+                    var querybookByTagAndCategory = queryBooksByCategory.Union (queryBooksByTag).Distinct ();
+                    queryOrdered = queryOrdered.Intersect (querybookByTagAndCategory);
                 }
                 if (!string.IsNullOrEmpty (author)) {
-                    queryOrdered = queryOrdered.Intersect (_context.Writtens.Where (x => x.Author.Name.ToUpper () == author.ToUpper ())
-                        .Select (a => a.Book));
+                    queryOrdered = queryOrdered.Intersect (_context.Writtens.GetBooksByAuthor (author));
                 }
-
-                var limitedQuery = queryOrdered
-                    .Skip (skip)
-                    .Take (take)
-                    .Select (x => new {
-                        x.Id, x.Isbn, x.Title, x.Thumbnail, Tags = x.Categorized.Select (c => c.Category.Name).Union (x.Taggeds.Select (t => t.Tag.Name))
-                    });
-
-                // la query est executée et le resultat est recuperé en mémoire
+                var limitedQuery = queryOrdered.GetListedBooks (skip, take);
+                // la requête est executée et le resultat est recuperé en mémoire
                 var books = await limitedQuery.ToListAsync ();
                 return Ok (Format.ToMessage (books, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Get Books on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -75,7 +75,7 @@ namespace BaseApi.Controllers {
         /// Get books
         /// </summary>
         /// <param name="categories">
-        /// string with category concatened by a ','   : category=leto,scout
+        /// string with category concatened by a ',' : category=leto,scout
         /// </param>
         /// <param name="skip">
         /// Skip
@@ -91,30 +91,25 @@ namespace BaseApi.Controllers {
         [HttpGet ("[action]")]
         public async Task<ActionResult<IEnumerable<Book>>> GetByCategories ([FromQuery] string categories, [FromQuery] int skip = 0, [FromQuery] int take = 15, [FromQuery] string orderBy = "asc") {
             try {
+                _log.Information ("GetByCategories Books requested on {Date}", DateTime.Now);
                 // construction de la query
-                IQueryable<Book> queryOrdered = (orderBy.Equals ("asc") ? _context.Books.OrderBy (x => x.Title) : _context.Books.OrderByDescending (x => x.Title)).AsQueryable ();
+                IQueryable<Book> queryOrdered = _context.Books.GetBooks (orderBy);
 
                 if (!string.IsNullOrEmpty (categories)) {
-                    var listC = categories.Split (",").Select (x => x.ToUpper ());
-                    queryOrdered = queryOrdered.Intersect (_context.Categorizeds.Where (x => listC.Contains (x.Category.Name.ToUpper ()))
-                        .Select (c => c.Book));
-                    queryOrdered = queryOrdered.Union (_context.Taggeds.Where (x => listC.Contains (x.Tag.Name.ToUpper ()))
-                        .Select (c => c.Book));
+                    IEnumerable<string> categoriesUpper = categories.Split (",").Select (x => x.ToUpper ());
+                    var queryBooksByCategories = _context.Categorizeds.GetBooksByCategories (categoriesUpper);
+                    var queryBooksByTags = _context.Taggeds.GetBooksByTags (categoriesUpper);
+                    var querybookByTagAndCategory = queryBooksByCategories.Union (queryBooksByTags).Distinct ();
+                    queryOrdered = queryOrdered.Intersect (querybookByTagAndCategory);
                 } else {
-                    return BadRequest ("no category found".ToBadRequest ());
+                    return BadRequest ("no categories found".ToBadRequest ());
                 }
-
-                var limitedQuery = queryOrdered
-                    .Skip (skip)
-                    .Take (take)
-                    .Select (x => new {
-                        x.Id, x.Isbn, x.Title, x.Thumbnail, Tags = x.Categorized.Select (c => c.Category.Name).Union (x.Taggeds.Select (t => t.Tag.Name))
-                    });
-
+                var limitedQuery = queryOrdered.GetListedBooks (skip, take);
                 // la query est executée et le resultat est recuperé en mémoire
                 var books = await limitedQuery.ToListAsync ();
                 return Ok (Format.ToMessage (books, 200));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on GetByCategories Books on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -129,29 +124,19 @@ namespace BaseApi.Controllers {
         /// <response code="404">Not found</response>
         [HttpGet ("{isbn}")]
         public async Task<ActionResult<Book>> Get (string isbn) {
-            // construction de la query
             try {
-                var result = await _context.Books.Select (x => new {
-                        x.Id, x.Isbn, x.Title, x.Thumbnail, x.Description, x.PublishedDate, Authors = x.Writtens.Select (a => a.Author.Name),
-                            Tags = x.Categorized.Select (c => c.Category.Name).Union (x.Taggeds.Select (t => t.Tag.Name))
-                    })
-                    .FirstOrDefaultAsync (b => b.Isbn == isbn);
+                _log.Information ("Get by isbn Books requested on {Date}", DateTime.Now);
+                var result = await _context.Books.GetBookInfoAsync (isbn);
                 if (result == null) {
                     var isFound = await Book.SaveNewBookFromGoogle (isbn: isbn);
 
-                    if (!isFound) {
-                        return NotFound ();
-                    }
-                    result = await _context.Books.Select (x => new {
-                            x.Id, x.Isbn, x.Title, x.Thumbnail, x.Description, x.PublishedDate, Authors = x.Writtens.Select (a => a.Author.Name),
-                                Tags = x.Categorized.Select (c => c.Category.Name).Union (x.Taggeds.Select (t => t.Tag.Name))
-                        })
-                        .FirstOrDefaultAsync (b => b.Isbn == isbn);
+                    if (!isFound) return NotFound ();
+
+                    result = await _context.Books.GetBookInfoAsync (isbn);
                 }
-                // result
-                // var book = new
                 return Ok (Format.ToMessage (result, 200));
-            } catch (System.Exception) {
+            } catch (Exception e) {
+                _log.Fatal (e.Message + "on Register User on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
         }
@@ -181,6 +166,7 @@ namespace BaseApi.Controllers {
         [HttpPut ("{id}")]
         public async Task<ActionResult> Put (Guid id, [FromBody] Tag tag) {
             try {
+                _log.Information ("Add tag to Books requested on {Date}", DateTime.Now);
                 var tagFromDb = await _context.Tags.FirstOrDefaultAsync (x => x.Name == tag.Name);
                 var bookFromDb = await _context.Books.FirstOrDefaultAsync (x => x.Id == id);
 
@@ -190,7 +176,9 @@ namespace BaseApi.Controllers {
 
                 if (tagFromDb != null) {
                     var asso = await _context.Taggeds.FirstOrDefaultAsync (x => x.BookId == id || x.TagId == tagFromDb.Id);
+
                     if (asso != null) return Created ("Tag Already exist", Format.ToMessage ("Created", 201));
+
                     var newAssociation = new Tagged { TagId = tagFromDb.Id, BookId = id };
                     _context.Taggeds.Add (newAssociation);
                     await _context.SaveChangesAsync ();
@@ -203,14 +191,16 @@ namespace BaseApi.Controllers {
 
                 _context.Tags.Add (tag);
                 await _context.SaveChangesAsync ();
+
                 var newTagged = new Tagged { TagId = tag.Id, BookId = id };
                 _context.Taggeds.Add (newTagged);
                 await _context.SaveChangesAsync ();
+
                 return Created ("Add tag", Format.ToMessage ("Created", 201));
             } catch (Exception e) {
+                _log.Fatal (e.Message + "on Get Books on {Date}", DateTime.Now);
                 return StatusCode (500);
             }
-
         }
     }
 }
