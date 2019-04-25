@@ -27,7 +27,7 @@ namespace BaseApi.Controllers {
             this._log = config.WriteTo.Console ()
                 .CreateLogger ();
         }
-        
+
         /// <summary>
         /// Register a User
         /// </summary>
@@ -186,7 +186,7 @@ namespace BaseApi.Controllers {
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
                 _log.Information ("User {Email} has changed his/her information on {date} ", userFromTokenId.Email, DateTime.Now);
-                return Ok (Format.ToMessage ("Success", 201));
+                return Created ("Infos", Format.ToMessage ("Success", 201));
             } catch (Exception e) {
                 _log.Fatal (e.Message + "on Patch User on {Date}", DateTime.Now);
                 return StatusCode (500);
@@ -221,7 +221,7 @@ namespace BaseApi.Controllers {
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
                 _log.Information ("User {Email} has changed his/her password on {date} ", userFromTokenId.Email, DateTime.Now);
-                return Ok (Format.ToMessage ("Success", 201));
+                return Created ("password",Format.ToMessage ("Success", 201));
             } catch (Exception e) {
                 _log.Fatal (e.Message + "on ChangePassword User on {Date}", DateTime.Now);
                 return StatusCode (500);
