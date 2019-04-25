@@ -27,7 +27,7 @@ namespace BaseApi.Controllers {
             this._log = config.WriteTo.Console ()
                 .CreateLogger ();
         }
-        
+
         /// <summary>
         /// Register a User
         /// </summary>
@@ -186,7 +186,7 @@ namespace BaseApi.Controllers {
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
                 _log.Information ("User {Email} has changed his/her information on {date} ", userFromTokenId.Email, DateTime.Now);
-                return Ok (Format.ToMessage ("Success", 201));
+                return NoContent ();
             } catch (Exception e) {
                 _log.Fatal (e.Message + "on Patch User on {Date}", DateTime.Now);
                 return StatusCode (500);
@@ -199,7 +199,7 @@ namespace BaseApi.Controllers {
         /// <param name="passwords">
         ///  {  password:string  , passwordConfirmation:string }
         /// </param>
-        /// <response code="201">Sucess</response>
+        /// <response code="201">success</response>
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
         [HttpPatch ("[action]")]
@@ -221,7 +221,7 @@ namespace BaseApi.Controllers {
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
                 _log.Information ("User {Email} has changed his/her password on {date} ", userFromTokenId.Email, DateTime.Now);
-                return Ok (Format.ToMessage ("Success", 201));
+                return NoContent ();
             } catch (Exception e) {
                 _log.Fatal (e.Message + "on ChangePassword User on {Date}", DateTime.Now);
                 return StatusCode (500);
