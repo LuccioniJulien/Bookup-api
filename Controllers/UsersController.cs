@@ -158,7 +158,7 @@ namespace BaseApi.Controllers {
         /// <param name="infos">
         ///  {  name:string  , email:string }
         /// </param>
-        /// <response code="201">Sucess</response>
+        /// <response code="204">Sucess</response>
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
         [HttpPatch]
@@ -199,7 +199,7 @@ namespace BaseApi.Controllers {
         /// <param name="passwords">
         ///  {  password:string  , passwordConfirmation:string }
         /// </param>
-        /// <response code="201">success</response>
+        /// <response code="204">success</response>
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
         [HttpPatch ("[action]")]
