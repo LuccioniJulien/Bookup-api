@@ -36,17 +36,19 @@ namespace BaseApi.Models {
 
         public void Seed () {
             using (var db = new DBcontext ()) {
-                IEnumerable<string> blasphemes = new List<string> { "bite", "fion", "vanus", "add", "aaerr", "scout", "leto", "bad", "ont", "fia", "parse", "ok" }.Select (x => x.ToUpper ());
+                List<string> blasphemes = new List<string> { "bite", "fion", "vanus", "add", "aaerr", "scout", "leto", "bad", "ont", "fia", "parse", "ok" }.Select (x => x.ToUpper ()).ToList ();
                 try {
                     var lien = db.Taggeds.Where (cs => blasphemes.Contains (cs.Tag.Name.ToUpper ()));
-                    lien.ToList ().ForEach (x => {
-                        db.Remove (x);
+                    var assoc = lien.ToList ();
+                    assoc.ForEach (x => {
+                        db.Taggeds.Remove (x);
                         db.SaveChanges ();
                     });
 
-                    var taggeds = lien.Select (x => x.Tag);
-                    taggeds.ToList ().ForEach (x => {
-                        db.Remove (x);
+                    var taggeds = db.Tags.Where (cs => blasphemes.Contains (cs.Name.ToUpper ()));
+                    var listTodelete = taggeds.ToList ();
+                    listTodelete.ForEach (x => {
+                        db.Tags.Remove (x);
                         db.SaveChanges ();
                     });
 
