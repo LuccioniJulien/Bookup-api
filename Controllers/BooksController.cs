@@ -72,7 +72,7 @@ namespace BaseApi.Controllers {
         }
 
         /// <summary>
-        /// Get books
+        /// Get books with some categories
         /// </summary>
         /// <param name="categories">
         /// string with category concatened by a ',' : category=leto,scout
