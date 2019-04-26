@@ -38,14 +38,14 @@ namespace BaseApi.Models {
             using (var db = new DBcontext ()) {
                 IEnumerable<string> blasphemes = new List<string> { "bite", "fion", "vanus", "add", "aaerr", "scout", "leto", "bad", "ont", "fia", "parse", "ok" }.Select (x => x.ToUpper ());
                 try {
-                    var lien = db.Categorizeds.Where (cs => blasphemes.Contains (cs.Category.Name.ToUpper ()));
+                    var lien = db.Taggeds.Where (cs => blasphemes.Contains (cs.Tag.Name.ToUpper ()));
                     lien.ToList ().ForEach (x => {
-                        db.Categorizeds.Remove (x);
+                        db.Remove (x);
                         db.SaveChanges ();
                     });
 
-                    var categ = lien.Select (x => x.Category);
-                    categ.ToList ().ForEach (x => {
+                    var taggeds = lien.Select (x => x.Tag);
+                    taggeds.ToList ().ForEach (x => {
                         db.Remove (x);
                         db.SaveChanges ();
                     });
