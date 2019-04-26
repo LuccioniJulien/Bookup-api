@@ -36,13 +36,13 @@ namespace BaseApi.Models {
 
         public void Seed () {
             using (var db = new DBcontext ()) {
-                IEnumerable<string> blasphemes = new List<string> { "bite", "fion", "vanus", "add", "aaerr", "scout", "leto", "bad", "ont", "fia", "parse" }.Select (x => x.ToUpper ());
+                IEnumerable<string> blasphemes = new List<string> { "bite", "fion", "vanus", "add", "aaerr", "scout", "leto", "bad", "ont", "fia", "parse","ok" }.Select (x => x.ToUpper ());
                 try {
                     var lien = db.Categorizeds.Where (cs => blasphemes.Contains (cs.Category.Name.ToUpper ()));
-                    db.Categorizeds.RemoveRange (lien);
+                    db.Categorizeds.RemoveRange (lien.ToList());
                     db.SaveChanges ();
                     var categ = lien.Select (x => x.Category);
-                    db.RemoveRange (categ);
+                    db.RemoveRange (categ.ToList());
                     db.SaveChanges ();
                 } catch (Exception e) {
                     Debug.WriteLine (e.Message);
