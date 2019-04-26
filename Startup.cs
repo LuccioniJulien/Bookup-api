@@ -71,10 +71,10 @@ namespace BaseApi {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
                     context.Database.Migrate ();
 
-                    // bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "true";
-                    // if (isSeed) {
-                    //     context.Seed ();
-                    // }
+                    bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "S";
+                    if (isSeed) {
+                        context.Seed ();
+                    }
                 }
             }
         }
