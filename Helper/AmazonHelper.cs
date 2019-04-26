@@ -30,7 +30,6 @@ namespace BaseApi.Helper {
                     }
                 }
             } catch {
-
                 return null;
             }
 

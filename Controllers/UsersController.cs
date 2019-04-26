@@ -158,7 +158,7 @@ namespace BaseApi.Controllers {
         /// <param name="infos">
         ///  {  name:string  , email:string }
         /// </param>
-        /// <response code="200">Sucess</response>
+        /// <response code="200">Success</response>
         /// <response code="400">Bad request </response>
         /// <response code="401">If the jwt is wrong</response> 
         [HttpPatch]
@@ -181,7 +181,7 @@ namespace BaseApi.Controllers {
                 }
 
                 userFromTokenId.Name = name;
-                userFromTokenId.Name = email;
+                userFromTokenId.Email = email;
 
                 _context.Update (userFromTokenId);
                 await _context.SaveChangesAsync ();
