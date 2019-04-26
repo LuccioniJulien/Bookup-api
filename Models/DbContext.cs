@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -33,36 +34,50 @@ namespace BaseApi.Models {
             optionsBuilder.UseNpgsql ($"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPassword}");
         }
 
-        public async void Seed () {
-            using (var client = new HttpClient ()) {
-                var urls = new List<string> {
-                "https://www.googleapis.com/books/v1/volumes?q=Fantasy&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Science+Fiction&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=History&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Drama&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Science&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Fiction&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Heroic&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Vagner&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Horor&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=games+of+thrones&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=star+wars&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=star+trek&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=dystopia&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=uchronic&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=SMITH+Dan&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Ormston+Dean&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=Infinity+Wars&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=comics&langRestrict=en&maxResults=40",
-                "https://www.googleapis.com/books/v1/volumes?q=dc&langRestrict=en&maxResults=40"
-                };
-
-                foreach (var url in urls) {
-                    string json = await client.GetStringAsync (url);
-                    var resource = JObject.Parse (json);
-                    Insert (resource);
+        public void Seed () {
+            using (var db = new DBcontext ()) {
+                IEnumerable<string> blasphemes = new List<string> { "bite", "fion", "vanus", "add", "aaerr", "scout", "leto", "bad", "ont", "fia", "parse" }.Select (x => x.ToUpper ());
+                try {
+                    var lien = db.Categorizeds.Where (cs => blasphemes.Contains (cs.Category.Name.ToUpper ()));
+                    db.Categorizeds.RemoveRange (lien);
+                    db.SaveChanges ();
+                    var categ = lien.Select (x => x.Category);
+                    db.RemoveRange (categ);
+                    db.SaveChanges ();
+                } catch (Exception e) {
+                    Debug.WriteLine (e.Message);
                 }
+
             }
+            // using (var client = new HttpClient ()) {
+            //     var urls = new List<string> {
+            //     "https://www.googleapis.com/books/v1/volumes?q=Fantasy&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Science+Fiction&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=History&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Drama&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Science&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Fiction&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Heroic&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Vagner&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Horor&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=games+of+thrones&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=star+wars&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=star+trek&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=dystopia&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=uchronic&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=SMITH+Dan&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Ormston+Dean&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=Infinity+Wars&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=comics&langRestrict=en&maxResults=40",
+            //     "https://www.googleapis.com/books/v1/volumes?q=dc&langRestrict=en&maxResults=40"
+            //     };
+
+            // foreach (var url in urls) {
+            //     string json = await client.GetStringAsync (url);
+            //     var resource = JObject.Parse (json);
+            //     Insert (resource);
+            // }
+            // }
         }
 
         public void Insert (JObject resource) {
