@@ -71,7 +71,7 @@ namespace BaseApi {
                 using (var context = serviceScope.ServiceProvider.GetService<DBcontext> ()) {
                     context.Database.Migrate ();
 
-                    bool isSeed = Environment.GetEnvironmentVariable ("SEED") == "true";
+                    bool isSeed = Environment.GetEnvironmentVariable ("ISALREADYSEED") == "false";
                     if (isSeed) {
                         context.Seed ();
                     }
